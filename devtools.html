@@ -1,0 +1,325 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=9; IE=8; IE=7; IE=EDGE" />
+    <!--[if lt IE 10]>
+        <script type="text/javascript" src="base64.js"></script>
+    <![endif]-->
+    <title>Dev Tools</title>
+
+    <style>
+        body {
+            font-family: Consolas, Courier, Verdana;
+            width: 768px;
+            margin-left: auto;
+            margin-right: auto;
+            background: #1e1e1e;
+        }
+        label {
+            display: block;
+        }
+        button {
+            width: 100px;
+            background-color: darkgrey;
+            border: solid 1px darkgrey;
+            color: black;
+        }
+        h1, h3, h2, h4, label {
+            color: #979797;
+        }
+        textarea {
+            width: 100%;
+        }
+        input[type='text'], textarea {
+            background: #2f2f2f;
+            border: solid 1px darkblue;
+            color: #d2cece;
+        }
+        .fineprint {
+            font-size: 0.7em;
+            color: #979797;
+            margin-bottom: 0.8em;
+        }
+        .header-with-fineprint {
+            margin-bottom: auto;
+        }
+        .button-bar {
+            margin-bottom: 5px;
+        }
+        .color-container {
+            position: relative;
+            height: 58px;
+            margin-top: 4px;
+        }
+        .color-picker, .selected-color, .color-copy-btn {
+            position: absolute;
+            top: 0;
+            width: 100px;
+            height: 44px;
+        }
+        .selected-color {
+            left: 115px;
+            border-width: 1px;
+            font-size: 150%;
+            padding-left: 5px;
+        }
+        .color-copy-btn {
+            left: 230px;
+            font-size: 150%;
+            height: 48px;
+        }
+        .medium-text {
+            width: 300px;
+        }
+        .length-options {
+            color: #979797;
+        }
+        .length-options .custom-length {
+            width: 50px;
+        }
+        .length-label {
+            display: inline-block;
+            line-height: 30px;
+        }
+        .ascii-art {
+            font-size: 10pt;
+            font-family: Monospace;
+            white-space: pre;
+            color: #ffffff;
+        }
+    </style>
+    <script type="text/javascript">
+        if (!window.btoa) window.btoa = base64.encode;
+        if (!window.atob) window.atob = base64.decode;
+        
+        function clearAll() {
+            var texts = document.getElementsByTagName('textarea');
+            var i = texts.length;
+            while (i--) {
+                texts[i].value = '';
+            };
+            var inLen = document.getElementById('base64InputLength');
+            var outLen = document.getElementById('base64OutputLength');
+            inLen.innerText = "(Length: 0)";
+            outLen.innerText = "(Length: 0)";
+        }
+        function base64encode() {
+            var input = document.getElementById('txtInput').value;
+            var txtOut = document.getElementById('txtOutput');
+            txtOut.value = btoa(input);
+            computeLength();
+        }
+        function base64decode() {
+            var input = document.getElementById('txtInput').value;
+            var txtOut = document.getElementById('txtOutput');
+            try {
+                txtOut.value = atob(input);
+                computeLength();
+            } catch(ex) {
+                var parts = ex.message.split(':');
+                txtOut.value = (parts.length > 1 ? parts[1] : parts[0]);
+            }
+        }
+
+        function encodeUrl() {
+            var obj = document.getElementById('txtUrlInOut');
+            var unencoded = obj.value;
+            obj.value = encodeURIComponent(unencoded).replace(/'/g,"%27").replace(/"/g,"%22");  
+        }
+        function decodeUrl() {
+            var obj = document.getElementById('txtUrlInOut');
+            var encoded = obj.value;
+            obj.value = decodeURIComponent(encoded.replace(/\+/g,  " "));
+        }
+        function encodeImg() {
+            //alert('Coming soon :-)');
+            var img = document.getElementById('base64Image');
+            var reader = new FileReader();
+            var uploadBtn = document.getElementById('uploadImgBtn');
+
+            reader.onloadend = function() {
+                img.src = reader.result;
+                img.style.display = "block";
+
+                var pos = img.src.indexOf(',');
+                var base64Data = document.getElementById('base64ImgData');
+
+                base64Data.value = img.src.substr(pos+1);
+            };
+
+            reader.readAsDataURL(uploadBtn.files[0]);
+        }
+        function makeImg() {
+            var img = document.getElementById('base64Image');
+            var base64Data = document.getElementById('base64ImgData');
+            img.src = "data:image/jpeg;base64," + base64Data.value;
+            img.style.display = "block";
+        }
+
+        function clearImg() {
+            var img = document.getElementById('base64Image');
+            img.src = "";
+            img.style.display = "none";
+        }
+
+        function uploadImg() {
+            var uploadBtn = document.getElementById('uploadImgBtn');
+            uploadBtn.click();
+        }
+
+        function generateGuid() {
+            var txtGuid = document.getElementById('txtGuid');
+            var useHyphens = !!document.getElementById('chkGuidHyphen').checked;
+
+            // RFC 4122 compliant guid generation. Credit: StackOverflow
+            var d = new Date().getTime(); 
+            var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = (d + Math.random() * 16) % 16 | 0;
+                d = Math.floor(d / 16);
+                return (c=='x' ? r : (r & 0x3 | 0x8)).toString(16);
+            });
+
+            txtGuid.value = (useHyphens ? uuid : uuid.replace(/-/g, ""));
+        }
+        function onColorChanged() {
+            var txtSelectedColor = document.getElementById('selectedColor');
+            txtSelectedColor.value = document.getElementById('colorPicker').value;
+        }
+        function onColorTextChanged() {
+            var colorPicker = document.getElementById('colorPicker');
+            colorPicker.value = document.getElementById('selectedColor').value;
+        }
+        function copyText(textInput) {
+            var txtCtrl = document.getElementById(textInput);
+            if (!txtCtrl) return;
+            txtCtrl.select();
+            document.execCommand("copy");
+        }
+        function generateSalt() {
+            var radios = document.getElementsByName('saltLength');
+            var genLength = 64;
+            for (var i = 0, length = radios.length; i < length; i++) {
+                if (radios[i].checked) {
+                    genLength = radios[i].value
+                    break;
+                }
+            }
+            if (genLength == 'Custom') {
+                var l = document.getElementById('txtCustomLength').value;
+                genLength = l ? l : 64;
+            }
+
+            var charSet = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz!$^()_-/{}0123456789'; // length = 72
+            var salt = '', index;
+
+            for(var i=0; i < genLength; i++) {
+                index = Math.floor(Math.random() * 71);
+                salt += charSet.charAt(index);
+            }
+            document.getElementById('txtSalt').value = salt;
+        }
+        function selectCustom() {
+            document.getElementById('customRadioOption').checked = true;
+        }
+        function computeLength() {
+            var inTA = document.getElementById('txtInput');
+            var outTA = document.getElementById('txtOutput');
+            var inLen = document.getElementById('base64InputLength');
+            var outLen = document.getElementById('base64OutputLength');
+
+            inLen.innerText = "(Length: " + inTA.value.length + ")";
+            outLen.innerText = "(Length: " + outTA.value.length + ")";
+        }
+
+    </script>
+</head>
+<body>
+    <pre class="ascii-art">
+________              ___________           .__          
+\______ \   _______  _\__    ___/___   ____ |  |   ______
+ |    |  \_/ __ \  \/ / |    | /  _ \ /  _ \|  |  /  ___/
+ |    `   \  ___/\   /  |    |(  <_> |  <_> )  |__\___ \ 
+/_______  /\___  >\_/   |____| \____/ \____/|____/____  >
+        \/     \/                                     \/ 
+    </pre>
+    <h3>Base64 Encoding/Decoding (Unicode chars not supported yet)</h3>
+    <label>Input <span id="base64InputLength">(Length: 0)</span></label>
+    <textarea cols="100" rows="5" id="txtInput" onchange="computeLength();"></textarea>
+    <label>Output <span id="base64OutputLength">(Length: 0)</span></label>
+    <textarea cols="100" rows="5" id="txtOutput" onchange="computeLength();"></textarea>
+    <div>
+        <button type="button" onclick="base64encode();">Encode</button>
+        <button type="button" onclick="base64decode();">Decode</button>
+        <button type="button" value="Clear" onclick="clearAll();">Clear</button>
+    </div>
+    <p></p>
+    <hr/>
+    <h3>Url Encoding/Decoding</h3>
+    <form id="urlEncodingDecoding">
+        <label>Input</label>
+        <textarea cols="100" rows="5" id="txtUrlInOut"></textarea>
+        <div>
+            <button type="button" onclick="encodeUrl();">Encode</button>
+            <button type="button" onclick="decodeUrl();">Decode</button>
+            <button type="reset">Clear</button>
+        </div>
+    </form>
+    <p></p>
+    <hr/>
+    <h3 class="header-with-fineprint">Base64 Image Encoding/Decoding</h3>
+    <div class="fineprint">If this doesn't work, either your browser doesn't support data uris or the base64 is bad</div>
+    <form id="imageEncodingDecoding">
+        <label>Image base64 data</label>
+        <textarea cols="100" rows="5" id="base64ImgData" placeholder="Put your image base64 data here"></textarea>
+        <div class="button-bar">
+            <button type="button" onclick="makeImg();">View Image</button>
+            <input style="display: none;" type="file" onchange="encodeImg();" id="uploadImgBtn"></input>
+            <button type="button" onclick="uploadImg();">Encode Image</button>
+            <button type="reset" onclick="clearImg();">Clear</button>
+        </div>
+        <img id='base64Image' style="display:none;" />
+    </form>
+    <hr/>
+    
+    <h3 class="header-with-fineprint">Color Picker</h3>
+    <form id="colorPickerForm">
+        <div class="color-container">
+            <input type="color" id="colorPicker" class="color-picker" onchange="onColorChanged();"></input>
+            <input type="text" id="selectedColor" class="selected-color" onchange="onColorTextChanged();"></input>
+            <button type="button" class="color-copy-btn" onclick="copyText('selectedColor');">Copy</button>
+        </div>
+        
+    </form>
+
+    <hr/>
+    <h3>Guid Generator (RFC 4122 compliant)</h3>
+    <form id="guidGenForm">
+        <input type="text" class="medium-text" id="txtGuid"></input>
+        <input type="checkbox" id="chkGuidHyphen"><span class="length-options">Hyphens?</span></input>
+        <button type="button" onclick="generateGuid();">Generate</button>
+        <button type="button" onclick="copyText('txtGuid')">Copy</button>
+        <button type="reset">Clear</button>
+    </form>
+    
+    <hr/>
+    <h3>Key/Salt Generator</h3>
+    <form id="saltForm">
+        <textarea cols="100" rows="5" id="txtSalt" class=""></textarea>
+        <div class="length-options">
+            <label class="length-label">Length</label>
+            <input type="radio" name="saltLength" value="64" checked="true">64</input>
+            <input type="radio" name="saltLength" value="128">128</input>
+            <input type="radio" name="saltLength" value="256">256</input>
+            <input type="radio" name="saltLength" value="Custom" id="customRadioOption">Custom</input>
+            <input type="text" id="txtCustomLength" class="custom-length" onfocus="selectCustom();"></input>
+            <button type="button" onclick="generateSalt();" >Generate</button>
+            <button type="button" onclick="copyText('txtSalt')">Copy</button>
+            <button type="reset">Clear</button>
+        </div>
+    </form>
+    
+    
+</body>
+</html>
